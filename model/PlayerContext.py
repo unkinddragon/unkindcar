@@ -4,6 +4,6 @@ from model.World import World
 
 
 class PlayerContext:
-    def __init__(self, cars, world: (None, World)):
+    def __init__(self, cars, world):
         self.cars = cars
         self.world = world

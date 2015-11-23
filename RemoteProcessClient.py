@@ -1,4 +1,4 @@
-import _socket
+import socket
 import struct
 
 from model.Car import Car
@@ -28,8 +28,8 @@ class RemoteProcessClient:
     DOUBLE_SIZE_BYTES = 8
 
     def __init__(self, host, port):
-        self.socket = _socket.socket()
-        self.socket.setsockopt(_socket.IPPROTO_TCP, _socket.TCP_NODELAY, True)
+        self.socket = socket.socket()
+        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
         self.socket.connect((host, port))
         self.map_name = None
         self.tiles_x_y = None
@@ -47,7 +47,7 @@ class RemoteProcessClient:
 
     def write_protocol_version_message(self):
         self.write_enum(RemoteProcessClient.MessageType.PROTOCOL_VERSION)
-        self.write_int(1)
+        self.write_int(2)
 
     def read_game_context_message(self):
         message_type = self.read_enum(RemoteProcessClient.MessageType)
@@ -63,7 +63,7 @@ class RemoteProcessClient:
         return self.read_player_context()
 
     def write_moves_message(self, moves):
-        self.write_enum(RemoteProcessClient.MessageType.MOVE)
+        self.write_enum(RemoteProcessClient.MessageType.MOVES)
         self.write_moves(moves)
 
     def close(self):
@@ -104,7 +104,7 @@ class RemoteProcessClient:
 
         bonuses = []
 
-        for _ in range(bonus_count):
+        for _ in xrange(bonus_count):
             bonuses.append(self.read_bonus())
 
         return bonuses
@@ -128,7 +128,7 @@ class RemoteProcessClient:
             self.read_long(), self.read_int(), self.read_boolean(), self.read_enum(CarType), self.read_int(),
             self.read_int(), self.read_int(), self.read_int(), self.read_int(), self.read_int(), self.read_int(),
             self.read_int(), self.read_double(), self.read_double(), self.read_double(), self.read_int(),
-            self.read_int(), self.read_boolean()
+            self.read_int(), self.read_int(), self.read_boolean()
         )
 
     def write_car(self, car):
@@ -162,6 +162,7 @@ class RemoteProcessClient:
             self.write_double(car.durability)
             self.write_double(car.engine_power)
             self.write_double(car.wheel_turn)
+            self.write_int(car.next_waypoint_index)
             self.write_int(car.next_waypoint_x)
             self.write_int(car.next_waypoint_y)
             self.write_boolean(car.finished_track)
@@ -173,7 +174,7 @@ class RemoteProcessClient:
 
         cars = []
 
-        for _ in range(car_count):
+        for _ in xrange(car_count):
             cars.append(self.read_car())
 
         return cars
@@ -273,7 +274,7 @@ class RemoteProcessClient:
 
         games = []
 
-        for _ in range(game_count):
+        for _ in xrange(game_count):
             games.append(self.read_game())
 
         return games
@@ -322,7 +323,7 @@ class RemoteProcessClient:
 
         moves = []
 
-        for _ in range(move_count):
+        for _ in xrange(move_count):
             moves.append(self.read_move())
 
         return moves
@@ -369,7 +370,7 @@ class RemoteProcessClient:
 
         oil_slicks = []
 
-        for _ in range(oil_slick_count):
+        for _ in xrange(oil_slick_count):
             oil_slicks.append(self.read_oil_slick())
 
         return oil_slicks
@@ -408,7 +409,7 @@ class RemoteProcessClient:
 
         players = []
 
-        for _ in range(player_count):
+        for _ in xrange(player_count):
             players.append(self.read_player())
 
         return players
@@ -444,7 +445,7 @@ class RemoteProcessClient:
 
         player_contexts = []
 
-        for _ in range(player_context_count):
+        for _ in xrange(player_context_count):
             player_contexts.append(self.read_player_context())
 
         return player_contexts
@@ -494,7 +495,7 @@ class RemoteProcessClient:
 
         projectiles = []
 
-        for _ in range(projectile_count):
+        for _ in xrange(projectile_count):
             projectiles.append(self.read_projectile())
 
         return projectiles
@@ -546,7 +547,7 @@ class RemoteProcessClient:
 
         worlds = []
 
-        for _ in range(world_count):
+        for _ in xrange(world_count):
             worlds.append(self.read_world())
 
         return worlds
@@ -567,8 +568,10 @@ class RemoteProcessClient:
         return self.map_name
 
     def read_tiles_x_y(self):
-        if self.tiles_x_y is None:
-            self.tiles_x_y = self.read_enums_2d(TileType)
+        new_tiles_x_y = self.read_enums_2d(TileType)
+
+        if new_tiles_x_y is not None and new_tiles_x_y.__len__() > 0:
+            self.tiles_x_y = new_tiles_x_y
 
         return self.tiles_x_y
 
@@ -593,7 +596,7 @@ class RemoteProcessClient:
         byte_array = self.read_bytes(RemoteProcessClient.SIGNED_BYTE_SIZE_BYTES)
         value = struct.unpack(RemoteProcessClient.BYTE_ORDER_FORMAT_STRING + "b", byte_array)[0]
 
-        for enum_key, enum_value in enum_class.__dict__.items():
+        for enum_key, enum_value in enum_class.__dict__.iteritems():
             if not str(enum_key).startswith("__") and value == enum_value:
                 return enum_value
 
@@ -606,7 +609,7 @@ class RemoteProcessClient:
 
         enums = []
 
-        for _ in range(count):
+        for _ in xrange(count):
             enums.append(self.read_enum(enum_class))
 
         return enums
@@ -618,7 +621,7 @@ class RemoteProcessClient:
 
         enums_2d = []
 
-        for _ in range(count):
+        for _ in xrange(count):
             enums_2d.append(self.read_enums(enum_class))
 
         return enums_2d
@@ -634,8 +637,8 @@ class RemoteProcessClient:
         else:
             self.write_int(enums.__len__())
 
-            for value in enums:
-                self.write_enum(value)
+            for enum in enums:
+                self.write_enum(enum)
 
     def write_enums_2d(self, enums_2d):
         if enums_2d is None:
@@ -652,14 +655,14 @@ class RemoteProcessClient:
             return None
 
         byte_array = self.read_bytes(length)
-        return byte_array.decode()
+        return byte_array.decode("utf-8")
 
     def write_string(self, value):
         if value is None:
             self.write_int(-1)
             return
 
-        byte_array = value.encode()
+        byte_array = value.encode("utf-8")
 
         self.write_int(len(byte_array))
         self.write_bytes(byte_array)
@@ -672,7 +675,7 @@ class RemoteProcessClient:
         byte_array = self.read_bytes(count * RemoteProcessClient.SIGNED_BYTE_SIZE_BYTES)
         unpacked_bytes = struct.unpack(RemoteProcessClient.BYTE_ORDER_FORMAT_STRING + str(count) + "b", byte_array)
 
-        return [unpacked_bytes[i] != 0 for i in range(count)]
+        return [unpacked_bytes[i] != 0 for i in xrange(count)]
 
     def write_boolean(self, value):
         self.write_bytes(struct.pack(RemoteProcessClient.BYTE_ORDER_FORMAT_STRING + "b", 1 if value else 0))
@@ -688,7 +691,7 @@ class RemoteProcessClient:
 
         ints = []
 
-        for _ in range(count):
+        for _ in xrange(count):
             ints.append(self.read_int())
 
         return ints
@@ -700,7 +703,7 @@ class RemoteProcessClient:
 
         ints_2d = []
 
-        for _ in range(count):
+        for _ in xrange(count):
             ints_2d.append(self.read_ints())
 
         return ints_2d
@@ -741,7 +744,7 @@ class RemoteProcessClient:
         self.write_bytes(struct.pack(RemoteProcessClient.BYTE_ORDER_FORMAT_STRING + "d", value))
 
     def read_bytes(self, byte_count):
-        byte_array = bytes()
+        byte_array = ''
 
         while len(byte_array) < byte_count:
             chunk = self.socket.recv(byte_count - len(byte_array))
@@ -764,4 +767,4 @@ class RemoteProcessClient:
         PROTOCOL_VERSION = 4
         GAME_CONTEXT = 5
         PLAYER_CONTEXT = 6
-        MOVE = 7
+        MOVES = 7

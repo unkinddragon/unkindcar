@@ -23,7 +23,7 @@ class Runner:
 
             strategies = []
 
-            for _ in range(team_size):
+            for _ in xrange(team_size):
                 strategies.append(MyStrategy())
 
             while True:
@@ -37,7 +37,7 @@ class Runner:
 
                 moves = []
 
-                for car_index in range(team_size):
+                for car_index in xrange(team_size):
                     player_car = player_cars[car_index]
 
                     move = Move()

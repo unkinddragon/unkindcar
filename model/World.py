@@ -10,7 +10,7 @@ from model.TileType import TileType
 
 class World:
     def __init__(self, tick, tick_count, last_tick_index, width, height, players, cars, projectiles, bonuses,
-                 oil_slicks, map_name, tiles_x_y, waypoints, starting_direction: (None, Direction)):
+                 oil_slicks, map_name, tiles_x_y, waypoints, starting_direction):
         self.tick = tick
         self.tick_count = tick_count
         self.last_tick_index = last_tick_index
